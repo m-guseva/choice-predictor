@@ -20,7 +20,8 @@ Additionally some metrics are displayed, e.g. the % of correct predictions, with
 
 It's possible to choose the specific ML algorithm used to make the predictions, by specifying `which_model` to `xgboost`, `logreg` (logistic regression) or `randomForest`
 
-The app is deployed under this link:
+The app is deployed and accesible under this link: https://choicepredictor.streamlit.app/
+
 
 
 
