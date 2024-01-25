@@ -11,27 +11,26 @@ from sklearn.ensemble import RandomForestClassifier
 
 st.set_page_config(layout="wide")
 
+
 ################################
 # Constants
 
 # How long should model learn in the beginning before making first prediction:
-initSeqLen =10
+initSeqLen =18
 # Interval in which the  model should be retrained
 interValToTest = 1
-# Which model to use ('logreg', 'xgboost' or  'randomForest')
-which_model  = 'logreg' 
-
+sequence = []
 button_sequence = []
 sequence_str= []
 perc_correctPredictions = []
-sequence = []
+
 
 ################################
 # Initialize session state variables
 if 'button_sequence' not in st.session_state:
     st.session_state.button_sequence = []
-if 'sequence_str' not in st.session_state:
-    st.session_state.sequence_str = []
+if 'which_model' not in st.session_state:
+    st.session_state.which_model = []
 if 'perc_correctPredictions' not in st.session_state:
     st.session_state.perc_correctPredictions = []
 if 'featureList' not in st.session_state:
@@ -183,17 +182,23 @@ def procedure(sequence):
 def uiElements(sequence):
     # Display user's choice:
     if len(sequence) <1:
-        col2.write(" ")
-        col2.subheader("Start by pressing either 1 or 0!")
+        col2.write(" ")        
+        if (not left_button) and (not right_button):
+            with col2:
+                modelChoice_radio = st.radio("1️⃣ Pick an algorithm:", ["xgboost", "logreg", "randomForest"], horizontal=False)
+                st.session_state.which_model = modelChoice_radio
+        else:
+            st.write(" ")
+        col2.write("2️⃣ Then start making your choices by pressing the buttons on the right!")
     else:
         with col2:
             st.metric(label="▫️YOUR CHOICE▫️", value=str(sequence[-1]))
     if len(sequence)<=initSeqLen+1:
-        col2.write("💬 Continue making choices, so I can learn!")
-        col2.write("Number of choices before I begin predicting:  " + str(initSeqLen+2-len(sequence)))
+        col1.write("💬 Continue making choices, so I can learn!")
+        col1.markdown("Number of choices before I begin predicting:  " + ":red["+str(initSeqLen+2-len(sequence))+"]")
     else:
         # Display computer's prediction:
-        col2.metric(label="✨MY PREDICTION ✨", value=int(st.session_state.predictionList[-2][0]))
+        col2.metric(label="✨WHAT I PREDICTED ✨", value=int(st.session_state.predictionList[-2][0]))
         displayStats()
     return
     
@@ -227,6 +232,13 @@ def displayStats():
 ################################
 # Front end
 st.title("Choice predictor")
+string = '''
+1. Choose the algorithm to use for prediction. If you don't choose anything, then the default algorithm will be xgboost. 
+2. Start making your sequence of choices by pressing the buttons 1 or 0 many times. Make sure to vary
+your choices because if you  use only :red[one] of the buttons, the algorithm will throw an error!
+3. After the algorithm has learned, it will start predicting your choices, the prediction accuracy will be shown on the right of the screen.
+'''
+st.markdown(string)
 
 # Create layout
 col1,col2, col3, col4, col5,col6 = st.columns([0.3,0.2,0.1,0.1,0.1,0.3])
@@ -234,17 +246,30 @@ col1.image("fortuneTeller.png")
 # Buttons
 left_symbol = "1"
 right_symbol = "0"
-col3.write(" ")
-col3.write(" ")
-col4.write(" ")
-col4.write(" ")
+
+# Make some space above buttons for better layout
+for _ in range(3):  
+    for col in [col3, col4]:
+        col.write(" ")
+        col.write(" ")
+
 left_button = col3.button(left_symbol,key=1,use_container_width=True)
 right_button = col4.button(right_symbol,key=0,use_container_width=True)
+
 
 if left_button:
     sequence = gatherChoiceSequence(left_symbol)
 elif right_button:
     sequence = gatherChoiceSequence(right_symbol)
+
+# Handle case where person presses only one button
+if (len(sequence) >= initSeqLen) & (len(set(sequence[:initSeqLen])) == 1):
+    with col2:
+        st.error("It seems like you have chosen only one of the options! 😱  The algorithm needs you to make choices between both 1 and 0! ☝🏻 Please refresh the page to start anew.", icon="‼️")
+        st.stop()
+
+# Which model to use ('logreg', 'xgboost' or  'randomForest')
+which_model  = st.session_state.which_model
 prediction = procedure(sequence)
 uiElements(sequence)
     
